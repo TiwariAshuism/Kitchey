@@ -12,6 +12,7 @@ import (
 var (
 	ErrNoDevicesToReply = errors.New("no paired devices to reply to")
 	ErrReplyTooLong     = errors.New("reply text too long")
+	ErrNotYourDevice    = errors.New("device not paired to your account")
 )
 
 type ReplyService struct {
@@ -82,9 +83,27 @@ func (s *ReplyService) SendReplyToAllDevices(ctx context.Context, senderUserID u
 	return replies, nil
 }
 
-// GetPendingReplies returns undelivered replies for a given Alexa device (called by the skill)
-func (s *ReplyService) GetPendingReplies(ctx context.Context, alexaDeviceID string) ([]domain.Reply, error) {
+// GetPendingReplies returns undelivered replies for a given Alexa device (called by the skill).
+// Verifies the caller owns a pairing for this device.
+func (s *ReplyService) GetPendingReplies(ctx context.Context, alexaDeviceID string, callerUserID uuid.UUID) ([]domain.Reply, error) {
+	if err := s.verifyDeviceOwnership(ctx, alexaDeviceID, callerUserID); err != nil {
+		return nil, err
+	}
 	return s.replyRepo.GetPendingByDeviceID(ctx, alexaDeviceID)
+}
+
+// verifyDeviceOwnership checks that callerUserID has a pairing for the given Alexa device.
+func (s *ReplyService) verifyDeviceOwnership(ctx context.Context, alexaDeviceID string, callerUserID uuid.UUID) error {
+	pairings, err := s.deviceRepo.GetByAlexaDeviceID(ctx, alexaDeviceID)
+	if err != nil {
+		return ErrNotYourDevice
+	}
+	for _, p := range pairings {
+		if p.UserID == callerUserID {
+			return nil
+		}
+	}
+	return ErrNotYourDevice
 }
 
 // MarkDelivered marks replies as read/played on Alexa

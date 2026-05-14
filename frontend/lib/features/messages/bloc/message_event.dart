@@ -10,3 +10,5 @@ class MessagesFetchRequested extends MessageEvent {}
 class MessagesLoadMore extends MessageEvent {}
 
 class MessageRefreshRequested extends MessageEvent {}
+
+class MessagePaginationErrorConsumed extends MessageEvent {}

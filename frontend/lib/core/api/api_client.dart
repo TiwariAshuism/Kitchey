@@ -1,15 +1,34 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class ApiClient {
-  // Same host the Alexa skill uses (BACKEND_URL). Override per build:
-  //   flutter run --dart-define=API_BASE_URL=https://YOUR.ngrok-free.app
-  // Android emulator -> host machine: --dart-define=API_BASE_URL=http://10.0.2.2:8080
-  static const String _defaultBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://gratify-handrail-fade.ngrok-free.dev',
+/// Resolves API base URL from `--dart-define=API_BASE_URL=...`.
+///
+/// In **debug** builds only, if `API_BASE_URL` is empty, falls back to
+/// `API_BASE_URL_DEBUG` (default `http://127.0.0.1:8080`) so local dev works
+/// without passing defines every time.
+///
+/// **Release/profile** builds require an explicit `API_BASE_URL` or startup
+/// will throw [StateError].
+String resolveApiBaseUrl() {
+  const fromEnv = String.fromEnvironment('API_BASE_URL');
+  if (fromEnv.isNotEmpty) {
+    return fromEnv;
+  }
+  if (kDebugMode) {
+    const debugFallback = String.fromEnvironment(
+      'API_BASE_URL_DEBUG',
+      defaultValue: 'https://gratify-handrail-fade.ngrok-free.dev',
+    );
+    return debugFallback;
+  }
+  throw StateError(
+    'Missing API_BASE_URL. Release builds require '
+    '--dart-define=API_BASE_URL=https://your-api-host',
   );
+}
 
+class ApiClient {
   final Dio dio;
   final FlutterSecureStorage _storage;
 
@@ -17,16 +36,16 @@ class ApiClient {
     : _storage = storage,
       dio = Dio(
         BaseOptions(
-          baseUrl: _defaultBaseUrl,
+          baseUrl: resolveApiBaseUrl(),
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 30),
-          headers: {
-            'Content-Type': 'application/json',
-            // Bypass ngrok's browser-warning interstitial on free plan.
-            'ngrok-skip-browser-warning': 'true',
-          },
+          headers: {'Content-Type': 'application/json'},
         ),
       ) {
+    final base = dio.options.baseUrl;
+    if (base.contains('ngrok')) {
+      dio.options.headers['ngrok-skip-browser-warning'] = 'true';
+    }
     dio.interceptors.add(_AuthInterceptor(storage: _storage, dio: dio));
   }
 }
@@ -73,12 +92,10 @@ class _AuthInterceptor extends Interceptor {
         await _storage.write(key: 'access_token', value: newAccessToken);
         await _storage.write(key: 'refresh_token', value: newRefreshToken);
 
-        // Retry original request
         err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
         final retryResponse = await _dio.fetch(err.requestOptions);
         handler.resolve(retryResponse);
       } catch (e) {
-        // Refresh failed, clear tokens
         await _storage.delete(key: 'access_token');
         await _storage.delete(key: 'refresh_token');
         handler.next(err);

@@ -19,6 +19,27 @@ class MessageModel {
 
   bool get isRead => readAt != null;
 
+  MessageModel copyWith({
+    String? id,
+    String? senderDeviceId,
+    String? recipientUserId,
+    String? transcript,
+    String? senderNickname,
+    DateTime? readAt,
+    bool clearReadAt = false,
+    DateTime? createdAt,
+  }) {
+    return MessageModel(
+      id: id ?? this.id,
+      senderDeviceId: senderDeviceId ?? this.senderDeviceId,
+      recipientUserId: recipientUserId ?? this.recipientUserId,
+      transcript: transcript ?? this.transcript,
+      senderNickname: senderNickname ?? this.senderNickname,
+      readAt: clearReadAt ? null : (readAt ?? this.readAt),
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   factory MessageModel.fromJson(Map<String, dynamic> json) {
     return MessageModel(
       id: json['id'],

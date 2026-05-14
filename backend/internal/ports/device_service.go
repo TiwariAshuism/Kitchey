@@ -3,6 +3,7 @@ package ports
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/ashutoshkumar/kitzz/internal/domain"
 	"github.com/google/uuid"
@@ -34,6 +35,7 @@ func (s *DeviceService) PairDevice(ctx context.Context, userID uuid.UUID, alexaD
 		AlexaDeviceID:  alexaDeviceID,
 		UserID:         userID,
 		DeviceNickname: nickname,
+		CreatedAt:      time.Now(),
 	}
 
 	if err := s.deviceRepo.Create(ctx, pairing); err != nil {

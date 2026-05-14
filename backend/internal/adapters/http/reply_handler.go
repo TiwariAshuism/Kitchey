@@ -102,8 +102,13 @@ func (h *ReplyHandler) GetPendingReplies(c *gin.Context) {
 		return
 	}
 
-	replies, err := h.replyService.GetPendingReplies(c.Request.Context(), alexaDeviceID)
+	userID := GetUserID(c)
+	replies, err := h.replyService.GetPendingReplies(c.Request.Context(), alexaDeviceID, userID)
 	if err != nil {
+		if errors.Is(err, ports.ErrNotYourDevice) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "device not paired to your account"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get replies"})
 		return
 	}

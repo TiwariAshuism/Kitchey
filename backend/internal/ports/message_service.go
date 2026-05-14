@@ -57,11 +57,8 @@ func (s *MessageService) HandleIncoming(ctx context.Context, alexaDeviceID strin
 	pairings, err := s.deviceRepo.GetByAlexaDeviceID(ctx, alexaDeviceID)
 	if err != nil {
 		log.Printf("[incoming] GetByAlexaDeviceID error: %v (alexa_device_id_len=%d)", err, len(alexaDeviceID))
-		return nil, ErrDeviceNotPaired
-	}
-	if len(pairings) == 0 {
-		log.Printf("[incoming] no device_pairings for this Alexa device_id (pair in app: POST /api/devices/pair with same id Echo sends)")
-		return nil, ErrDeviceNotPaired
+		// Don't fail — treat as empty list and auto-pair below
+		pairings = nil
 	}
 
 	// Find the sender's pairing for this device
@@ -72,9 +69,26 @@ func (s *MessageService) HandleIncoming(ctx context.Context, alexaDeviceID strin
 			break
 		}
 	}
+
+	// Auto-pair: if the authenticated user has no pairing for this Alexa device,
+	// create one automatically. This eliminates the manual copy-paste-device-id
+	// step that was the #1 user friction point.
 	if senderPairing == nil {
-		log.Printf("[incoming] Echo is paired to %d other user(s) but not to sender user_id=%s (link Alexa to same account you used to pair, or add a pairing for this user)", len(pairings), senderUserID)
-		return nil, ErrDeviceNotPaired
+		log.Printf("[incoming] auto-pairing: user_id=%s alexa_device_id_len=%d", senderUserID, len(alexaDeviceID))
+		newPairing := &domain.DevicePairing{
+			ID:             uuid.New(),
+			AlexaDeviceID:  alexaDeviceID,
+			UserID:         senderUserID,
+			DeviceNickname: "Kitchen Echo",
+			CreatedAt:      time.Now(),
+		}
+		if err := s.deviceRepo.Create(ctx, newPairing); err != nil {
+			log.Printf("[incoming] auto-pair Create failed: %v", err)
+			return nil, ErrDeviceNotPaired
+		}
+		senderPairing = newPairing
+		pairings = append(pairings, *newPairing)
+		log.Printf("[incoming] auto-paired device_pairing_id=%s for user_id=%s", newPairing.ID, senderUserID)
 	}
 
 	var messageIDs []uuid.UUID
@@ -97,6 +111,7 @@ func (s *MessageService) HandleIncoming(ctx context.Context, alexaDeviceID strin
 			SenderDeviceID:  senderPairing.ID,
 			RecipientUserID: pairing.UserID,
 			Transcript:      transcript,
+			CreatedAt:       time.Now(),
 		}
 
 		if err := s.messageRepo.Create(ctx, msg); err != nil {
@@ -134,6 +149,7 @@ func (s *MessageService) HandleIncoming(ctx context.Context, alexaDeviceID strin
 			SenderDeviceID:  senderPairing.ID,
 			RecipientUserID: senderUserID,
 			Transcript:      transcript,
+			CreatedAt:       time.Now(),
 		}
 		if err := s.messageRepo.Create(ctx, msg); err != nil {
 			log.Printf("[incoming] solo Create failed: %v", err)

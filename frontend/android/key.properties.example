@@ -1,0 +1,8 @@
+# Copy to key.properties (same folder as this file) and fill in values.
+# Never commit key.properties or your keystore to git.
+#
+# storeFile is relative to android/app/ (e.g. ../release-keystore.jks).
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=your-key-alias
+storeFile=../path-to-your-release.keystore

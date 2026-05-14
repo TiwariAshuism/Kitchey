@@ -1,11 +1,111 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:app_settings/app_settings.dart';
+import 'package:intl/intl.dart';
 import 'package:kitzz/features/auth/bloc/auth_bloc.dart';
 import 'package:kitzz/features/auth/bloc/auth_event.dart';
+import 'package:kitzz/features/auth/data/auth_repository.dart';
+import 'package:kitzz/features/subscription/data/subscription_repository.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  SubscriptionInfo? _subscription;
+  String? _subscriptionError;
+  bool _subscriptionLoading = true;
+  bool _deletingAccount = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadSubscription());
+  }
+
+  Future<void> _loadSubscription() async {
+    setState(() {
+      _subscriptionLoading = true;
+      _subscriptionError = null;
+    });
+    try {
+      final sub = await context.read<SubscriptionRepository>().getCurrent();
+      if (!mounted) return;
+      setState(() {
+        _subscription = sub;
+        _subscriptionLoading = false;
+        _subscriptionError = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _subscription = null;
+        _subscriptionLoading = false;
+        _subscriptionError = 'Could not load subscription';
+      });
+    }
+  }
+
+  String _subscriptionSubtitle() {
+    if (_subscriptionLoading) return 'Loading…';
+    if (_subscriptionError != null) return _subscriptionError!;
+    final s = _subscription;
+    if (s == null) return 'No subscription on file';
+    final exp = DateFormat.yMMMd().format(s.expiresAt.toLocal());
+    return '${s.status} · ${s.plan.isEmpty ? 'plan' : s.plan} · until $exp';
+  }
+
+  Future<void> _openNotificationSettings() async {
+    await AppSettings.openAppSettings(type: AppSettingsType.notification);
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your account, messages, and device pairings. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(ctx).colorScheme.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    setState(() => _deletingAccount = true);
+    try {
+      await context.read<AuthRepository>().deleteAccount();
+      if (!context.mounted) return;
+      context.read<AuthBloc>().add(AuthLogoutRequested());
+      context.go('/login');
+    } on DioException catch (e) {
+      if (!context.mounted) return;
+      String msg = 'Could not delete account';
+      final data = e.response?.data;
+      if (data is Map && data['error'] != null) {
+        msg = data['error'].toString();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not delete account')));
+    } finally {
+      if (mounted) setState(() => _deletingAccount = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,87 +113,63 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
         children: [
-          const _SectionHeader(title: 'Account'),
-          ListTile(
-            leading: const Icon(Icons.person_outlined),
-            title: const Text('Profile'),
-            subtitle: const Text('Name and email'),
-            onTap: () {
-              // TODO: Navigate to profile edit
-            },
-          ),
+          const _SectionHeader(title: 'Notifications'),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Notifications'),
+            title: const Text('System notification settings'),
             subtitle: const Text(
-              'Alerts use Firebase Cloud Messaging; token syncs when you sign in',
+              'Rasoi uses Firebase for push alerts when Alexa sends a message. Your device token syncs when you sign in.',
             ),
-            onTap: () {
-              // TODO: Navigate to notification settings
-            },
+            trailing: const Icon(Icons.open_in_new, size: 20),
+            onTap: _openNotificationSettings,
           ),
           const Divider(),
           const _SectionHeader(title: 'Subscription'),
           ListTile(
             leading: const Icon(Icons.card_membership_outlined),
             title: const Text('Subscription'),
-            subtitle: const Text('Trial active'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () {
-              // TODO: Navigate to subscription details
-            },
+            subtitle: Text(_subscriptionSubtitle()),
+            trailing: _subscriptionLoading
+                ? const SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: Padding(
+                      padding: EdgeInsets.all(4),
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh subscription',
+                    onPressed: _loadSubscription,
+                  ),
           ),
           const Divider(),
-          const _SectionHeader(title: 'Data & Privacy'),
+          const _SectionHeader(title: 'Account'),
           ListTile(
-            leading: const Icon(Icons.download_outlined),
-            title: const Text('Export My Data'),
-            onTap: () {
-              // TODO: Trigger data export
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
-            title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-            onTap: () => _showDeleteConfirmation(context),
+            leading: Icon(Icons.delete_forever_outlined, color: Theme.of(context).colorScheme.error),
+            title: Text('Delete account', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            enabled: !_deletingAccount,
+            subtitle: _deletingAccount ? const Text('Deleting…') : null,
+            onTap: _deletingAccount ? null : () => _confirmDeleteAccount(context),
           ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
-            title: const Text('Sign Out'),
+            title: const Text('Sign out'),
             onTap: () {
               context.read<AuthBloc>().add(AuthLogoutRequested());
               context.go('/login');
             },
           ),
           const SizedBox(height: 24),
-          const Center(
-            child: Text('Rasoi v1.0.0', style: TextStyle(color: Colors.grey)),
+          Center(
+            child: Text(
+              'Rasoi v1.0.0',
+              style: TextStyle(color: Theme.of(context).colorScheme.outline),
+            ),
           ),
           const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account?'),
-        content: const Text('This will permanently delete your account, all messages, and device pairings. This action cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              // TODO: Call delete account API
-              context.read<AuthBloc>().add(AuthLogoutRequested());
-              context.go('/login');
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
         ],
       ),
     );
@@ -111,7 +187,11 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         title,
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+        ),
       ),
     );
   }

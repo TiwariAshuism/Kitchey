@@ -13,11 +13,31 @@ class MessagesLoading extends MessageState {}
 class MessagesLoaded extends MessageState {
   final List<MessageModel> messages;
   final bool hasMore;
+  final String? paginationError;
 
-  MessagesLoaded({required this.messages, this.hasMore = true});
+  MessagesLoaded({
+    required this.messages,
+    this.hasMore = true,
+    this.paginationError,
+  });
+
+  MessagesLoaded copyWith({
+    List<MessageModel>? messages,
+    bool? hasMore,
+    String? paginationError,
+    bool clearPaginationError = false,
+  }) {
+    return MessagesLoaded(
+      messages: messages ?? this.messages,
+      hasMore: hasMore ?? this.hasMore,
+      paginationError: clearPaginationError
+          ? null
+          : (paginationError ?? this.paginationError),
+    );
+  }
 
   @override
-  List<Object?> get props => [messages.length, hasMore];
+  List<Object?> get props => [messages, hasMore, paginationError];
 }
 
 class MessagesError extends MessageState {

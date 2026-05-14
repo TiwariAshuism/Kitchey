@@ -4,24 +4,26 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:kitzz/core/push/app_notifications_cubit.dart';
+import 'package:kitzz/core/push/push_notification_models.dart';
 import 'package:kitzz/features/auth/data/auth_repository.dart';
 
-/// Wires Firebase Cloud Messaging to the backend and in-app navigation.
+/// Wires Firebase Cloud Messaging: token sync, deep links, and in-app notification hub.
 class FcmService {
   FcmService({
     required AuthRepository authRepository,
+    required AppNotificationsCubit notificationsCubit,
     GoRouter? router,
-    GlobalKey<ScaffoldMessengerState>? scaffoldMessengerKey,
     void Function()? onInboxShouldRefresh,
   })  : _authRepository = authRepository,
+        _notificationsCubit = notificationsCubit,
         _router = router,
-        _scaffoldMessengerKey = scaffoldMessengerKey,
         _onInboxShouldRefresh = onInboxShouldRefresh;
 
   final AuthRepository _authRepository;
+  final AppNotificationsCubit _notificationsCubit;
   final void Function()? _onInboxShouldRefresh;
   GoRouter? _router;
-  final GlobalKey<ScaffoldMessengerState>? _scaffoldMessengerKey;
 
   final List<StreamSubscription<dynamic>> _subscriptions = [];
 
@@ -34,8 +36,9 @@ class FcmService {
     try {
       final messaging = FirebaseMessaging.instance;
 
+      // Prefer in-app notification hub over system heads-up while app is foregrounded (iOS).
       await messaging.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false,
         badge: true,
         sound: true,
       );
@@ -58,14 +61,14 @@ class FcmService {
       );
       _subscriptions.add(
         FirebaseMessaging.onMessageOpenedApp.listen(
-          _handleNotificationNavigation,
+          (m) => _handleNotificationNavigation(m, AppNotificationSource.openedFromBackground),
         ),
       );
 
       final initial = await messaging.getInitialMessage();
       if (initial != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleNotificationNavigation(initial);
+          _handleNotificationNavigation(initial, AppNotificationSource.initialLaunch);
         });
       }
 
@@ -75,36 +78,36 @@ class FcmService {
         }),
       );
     } catch (e, st) {
-      debugPrint('FCM configureMessaging failed: $e\n$st');
+      debugPrint('FcmService.configureMessaging failed: $e\n$st');
     }
   }
 
   void _onForegroundMessage(RemoteMessage message) {
-    if (message.data.containsKey('message_id')) {
+    _notificationsCubit.ingest(message, source: AppNotificationSource.foreground);
+    if (message.data.containsKey('message_id') || message.data.containsKey('messageId')) {
       _onInboxShouldRefresh?.call();
     }
-    final title = message.notification?.title ?? 'Rasoi';
-    final body = message.notification?.body ?? message.data['body'] ?? '';
-    final messenger = _scaffoldMessengerKey?.currentState;
-    if (messenger != null && body.isNotEmpty) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('$title: $body')),
-      );
-    } else if (kDebugMode) {
-      debugPrint('FCM foreground: $title — $body');
+    if (kDebugMode) {
+      final title = message.notification?.title ?? 'Rasoi';
+      final body = message.notification?.body ?? message.data['body'] ?? '';
+      debugPrint('FCM foreground (hub): $title — $body');
     }
   }
 
-  void _handleNotificationNavigation(RemoteMessage message) {
+  void _handleNotificationNavigation(RemoteMessage message, AppNotificationSource source) {
+    _notificationsCubit.ingest(message, source: source);
+
     final id = message.data['message_id'] ?? message.data['messageId'];
-    if (id == null || id.isEmpty) {
+    if (id == null || id.toString().isEmpty) {
       return;
     }
     final router = _router;
     if (router == null) {
       return;
     }
-    router.go('/messages/$id');
+    final sid = id.toString();
+    router.go('/messages/$sid');
+    _notificationsCubit.markReadByMessageId(sid);
   }
 
   /// Sends the current FCM token to the API when a session exists.

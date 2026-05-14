@@ -57,6 +57,10 @@ func (f *FCMClient) SendPush(ctx context.Context, fcmToken string, title string,
 		},
 	}
 
-	_, err := f.client.Send(ctx, message)
-	return err
+	msgID, err := f.client.Send(ctx, message)
+	if err != nil {
+		return err
+	}
+	log.Printf("FCM send accepted by Firebase: message_id=%s title=%q", msgID, title)
+	return nil
 }

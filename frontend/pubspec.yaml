@@ -36,10 +36,18 @@ dependencies:
   # Utils
   intl: ^0.20.2
 
+  # TTS
+  flutter_tts: ^4.2.0
+
+  # Open OS settings (notification permissions / app settings)
+  app_settings: ^5.1.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  bloc_test: ^10.0.0
+  mocktail: ^1.0.4
 
 flutter:
   uses-material-design: true

@@ -37,7 +37,7 @@ Plug these into the Alexa Developer Console:
 - **Account Linking → Authorization URI** → `https://<ngrok>.app/oauth/authorize`
 - **Account Linking → Access Token URI** → `https://<ngrok>.app/oauth/token`
 
-Override the upstream by setting `ALEXA_SKILL_URL` in `.env` if the Node
+Override the upstream by setting `ALEXA_SKILL_URL` in the repo root `.env` if the Node
 server runs on a non-default host or port (default is
 `http://localhost:3000`).
 
@@ -48,7 +48,7 @@ server runs on a non-default host or port (default is
 | 1 | **Add Firebase project** | For push notifications to phone |
 | 2 | **Add `google-services.json`** | Android FCM config |
 | 3 | **Add `GoogleService-Info.plist`** | iOS FCM config |
-| 4 | **Set `OAUTH_CLIENT_SECRET`** in backend `.env` | Secure the account linking |
+| 4 | **Copy `.env.example` to `.env`** at repository root | Database, JWT, Firebase, Alexa URLs |
 | 5 | **Fix OAuth token endpoint** | Currently returns simplified tokens, needs proper JWT |
 
 ### Can Skip For Now

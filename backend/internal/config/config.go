@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -27,7 +28,7 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-	_ = godotenv.Load() // ignore error if .env doesn't exist
+	loadRepoRootDotenv()
 
 	cfg := &Config{
 		Port:              getEnv("PORT", "8080"),
@@ -60,6 +61,30 @@ func Load() (*Config, error) {
 	cfg.OAuthCodeTTL = 10 * time.Minute
 
 	return cfg, nil
+}
+
+// loadRepoRootDotenv loads a single .env next to docker-compose.yml (repo root),
+// no matter whether the process cwd is backend/ or the repository root.
+func loadRepoRootDotenv() {
+	wd, err := os.Getwd()
+	if err != nil {
+		_ = godotenv.Load(".env")
+		return
+	}
+	dir := wd
+	for {
+		compose := filepath.Join(dir, "docker-compose.yml")
+		if fi, statErr := os.Stat(compose); statErr == nil && !fi.IsDir() {
+			_ = godotenv.Load(filepath.Join(dir, ".env"))
+			return
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			break
+		}
+		dir = parent
+	}
+	_ = godotenv.Load(".env")
 }
 
 func getEnv(key, fallback string) string {

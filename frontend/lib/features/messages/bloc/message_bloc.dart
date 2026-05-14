@@ -10,6 +10,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessagesFetchRequested>(_onFetchRequested);
     on<MessagesLoadMore>(_onLoadMore);
     on<MessageRefreshRequested>(_onRefreshRequested);
+    on<MessagePaginationErrorConsumed>(_onPaginationErrorConsumed);
   }
 
   Future<void> _onFetchRequested(MessagesFetchRequested event, Emitter<MessageState> emit) async {
@@ -22,6 +23,16 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     }
   }
 
+  void _onPaginationErrorConsumed(
+    MessagePaginationErrorConsumed event,
+    Emitter<MessageState> emit,
+  ) {
+    final current = state;
+    if (current is MessagesLoaded && current.paginationError != null) {
+      emit(current.copyWith(clearPaginationError: true));
+    }
+  }
+
   Future<void> _onLoadMore(MessagesLoadMore event, Emitter<MessageState> emit) async {
     final currentState = state;
     if (currentState is! MessagesLoaded || !currentState.hasMore) return;
@@ -31,16 +42,30 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       final cursor = lastMessage.createdAt.toIso8601String();
       final newMessages = await _messageRepository.getMessages(cursor: cursor);
 
-      emit(MessagesLoaded(messages: [...currentState.messages, ...newMessages], hasMore: newMessages.length >= 20));
+      emit(
+        MessagesLoaded(
+          messages: [...currentState.messages, ...newMessages],
+          hasMore: newMessages.length >= 20,
+        ),
+      );
     } catch (e) {
-      // Keep current state on load-more failure
+      emit(
+        currentState.copyWith(
+          paginationError: 'Could not load older messages. Pull to refresh and try again.',
+        ),
+      );
     }
   }
 
   Future<void> _onRefreshRequested(MessageRefreshRequested event, Emitter<MessageState> emit) async {
     try {
       final messages = await _messageRepository.getMessages();
-      emit(MessagesLoaded(messages: messages, hasMore: messages.length >= 20));
+      emit(
+        MessagesLoaded(
+          messages: messages,
+          hasMore: messages.length >= 20,
+        ),
+      );
     } catch (e) {
       emit(MessagesError(message: 'Failed to refresh messages'));
     }
