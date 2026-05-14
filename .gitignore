@@ -1,0 +1,37 @@
+# Environment
+.env
+*.env.local
+
+# Firebase (never commit Admin SDK keys)
+firebase-service-account.json
+**/*firebase-adminsdk*.json
+
+# Go
+backend/tmp/
+backend/vendor/
+
+# Flutter
+frontend/.dart_tool/
+frontend/.packages
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/pubspec.lock
+
+# Alexa
+alexa-skill/node_modules/
+alexa-skill/.ask/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

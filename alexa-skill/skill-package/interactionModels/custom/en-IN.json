@@ -1,0 +1,223 @@
+{
+    "interactionModel": {
+        "languageModel": {
+            "invocationName": "rasoi",
+            "intents": [
+                {
+                    "name": "SendMessageIntent",
+                    "slots": [
+                        {
+                            "name": "message",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "send a message {message}",
+                        "tell my family {message}",
+                        "send {message}",
+                        "message {message}",
+                        "say {message}",
+                        "let them know {message}",
+                        "tell everyone {message}",
+                        "inform my family {message}",
+                        "pass the message {message}",
+                        "send message {message}",
+                        "notify my family {message}",
+                        "tell the family {message}",
+                        "tell them {message}",
+                        "announce {message}",
+                        "broadcast {message}",
+                        "let everyone know {message}",
+                        "pass on {message}",
+                        "relay {message}",
+                        "tell my kids {message}",
+                        "tell my husband {message}",
+                        "tell my wife {message}",
+                        "tell papa {message}",
+                        "tell mummy {message}",
+                        "tell mom {message}",
+                        "tell dad {message}",
+                        "send a message",
+                        "I want to send a message",
+                        "send message",
+                        "I have a message",
+                        "can you send a message"
+                    ]
+                },
+                {
+                    "name": "ContinueMessageIntent",
+                    "slots": [
+                        {
+                            "name": "message",
+                            "type": "AMAZON.SearchQuery"
+                        }
+                    ],
+                    "samples": [
+                        "also tell them {message}",
+                        "add {message}",
+                        "also {message}",
+                        "and {message}",
+                        "one more thing {message}",
+                        "continue {message}",
+                        "add more {message}",
+                        "also say {message}",
+                        "and also {message}",
+                        "oh and {message}",
+                        "wait also {message}",
+                        "plus {message}",
+                        "another thing {message}"
+                    ]
+                },
+                {
+                    "name": "CheckRepliesIntent",
+                    "slots": [],
+                    "samples": [
+                        "check replies",
+                        "check messages",
+                        "do I have any messages",
+                        "any replies",
+                        "any messages for me",
+                        "check my messages",
+                        "read my messages",
+                        "what did they say",
+                        "did anyone reply",
+                        "any new messages",
+                        "read replies",
+                        "are there any messages",
+                        "do I have messages",
+                        "what's new",
+                        "any updates from family",
+                        "did my family reply",
+                        "did anyone respond",
+                        "read messages",
+                        "play my messages",
+                        "what messages do I have"
+                    ]
+                },
+                {
+                    "name": "LastMessageIntent",
+                    "slots": [],
+                    "samples": [
+                        "what did I say last",
+                        "what was my last message",
+                        "repeat my message",
+                        "what did I send",
+                        "what was the last message",
+                        "what did I just say",
+                        "recall my last message",
+                        "what message did I send"
+                    ]
+                },
+                {
+                    "name": "AMAZON.HelpIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.StopIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.CancelIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.FallbackIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.RepeatIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.YesIntent",
+                    "samples": []
+                },
+                {
+                    "name": "AMAZON.NoIntent",
+                    "samples": []
+                }
+            ]
+        },
+        "dialog": {
+            "intents": [
+                {
+                    "name": "SendMessageIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "message",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.SendMessage.message"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "ContinueMessageIntent",
+                    "confirmationRequired": false,
+                    "prompts": {},
+                    "slots": [
+                        {
+                            "name": "message",
+                            "type": "AMAZON.SearchQuery",
+                            "confirmationRequired": false,
+                            "elicitationRequired": true,
+                            "prompts": {
+                                "elicitation": "Elicit.Slot.ContinueMessage.message"
+                            }
+                        }
+                    ]
+                }
+            ],
+            "delegationStrategy": "SKILL_RESPONSE"
+        },
+        "prompts": [
+            {
+                "id": "Elicit.Slot.SendMessage.message",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "What message would you like to send?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Go ahead, say your message."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "What should I tell your family?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Sure, what do you want to say?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "I'm listening. What's the message?"
+                    }
+                ]
+            },
+            {
+                "id": "Elicit.Slot.ContinueMessage.message",
+                "variations": [
+                    {
+                        "type": "PlainText",
+                        "value": "What else would you like to add?"
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Go ahead, say the rest of your message."
+                    },
+                    {
+                        "type": "PlainText",
+                        "value": "Sure, what else?"
+                    }
+                ]
+            }
+        ]
+    }
+}

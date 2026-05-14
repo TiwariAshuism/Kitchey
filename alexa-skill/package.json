@@ -1,0 +1,22 @@
+{
+    "name": "kitzz-alexa-skill",
+    "version": "1.0.0",
+    "description": "Kitzz Alexa Skill - Send kitchen messages to family members",
+    "main": "lambda/index.js",
+    "scripts": {
+        "start": "node local/server.js",
+        "test": "echo \"No tests yet\" && exit 0"
+    },
+    "dependencies": {
+        "ask-sdk-core": "^2.14.0",
+        "ask-sdk-model": "^1.86.0",
+        "axios": "^1.7.0",
+        "dotenv": "^16.6.1"
+    },
+    "devDependencies": {
+        "express": "^4.21.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

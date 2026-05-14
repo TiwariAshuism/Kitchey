@@ -1,0 +1,92 @@
+{
+    "manifest": {
+        "publishingInformation": {
+            "locales": {
+                "en-IN": {
+                    "summary": "Send kitchen messages to your family's phones",
+                    "examplePhrases": [
+                        "Alexa, open rasoi",
+                        "Alexa, tell rasoi dinner is ready",
+                        "Alexa, ask rasoi to send a message"
+                    ],
+                    "keywords": [
+                        "rasoi",
+                        "kitchen",
+                        "message",
+                        "family",
+                        "notification",
+                        "communication"
+                    ],
+                    "name": "Rasoi",
+                    "description": "Rasoi lets you send voice messages from your kitchen to your family members' phones. Simply speak your message through your Alexa device, and your family will receive an instant notification with the message on their Rasoi app. Perfect for letting everyone know when dinner is ready, groceries are needed, or any quick kitchen update.",
+                    "smallIconUri": "https://placeholder.kitzz.app/icon_108.png",
+                    "largeIconUri": "https://placeholder.kitzz.app/icon_512.png"
+                },
+                "en-US": {
+                    "summary": "Send kitchen messages to your family's phones",
+                    "examplePhrases": [
+                        "Alexa, open rasoi",
+                        "Alexa, tell rasoi dinner is ready",
+                        "Alexa, ask rasoi to send a message"
+                    ],
+                    "keywords": [
+                        "rasoi",
+                        "kitchen",
+                        "message",
+                        "family",
+                        "notification",
+                        "communication"
+                    ],
+                    "name": "Rasoi",
+                    "description": "Rasoi lets you send voice messages from your kitchen to your family members' phones. Simply speak your message through your Alexa device, and your family will receive an instant notification with the message on their Rasoi app. Perfect for letting everyone know when dinner is ready, groceries are needed, or any quick kitchen update.",
+                    "smallIconUri": "https://placeholder.kitzz.app/icon_108.png",
+                    "largeIconUri": "https://placeholder.kitzz.app/icon_512.png"
+                }
+            },
+            "isAvailableWorldwide": false,
+            "testingInstructions": "1. Create an account in the Rasoi app. 2. Enable the skill and link your account. 3. Say 'Alexa, open Rasoi' and send a test message. 4. Verify the message appears in the Rasoi app.",
+            "category": "COMMUNICATION",
+            "distributionCountries": [
+                "IN",
+                "US"
+            ]
+        },
+        "apis": {
+            "custom": {
+                "endpoint": {
+                    "uri": "arn:aws:lambda:ap-south-1:XXXXXXXXXXXX:function:kitzz-alexa-skill"
+                },
+                "interfaces": []
+            }
+        },
+        "manifestVersion": "1.0",
+        "privacyAndCompliance": {
+            "allowsPurchases": false,
+            "usesPersonalInfo": true,
+            "isChildDirected": false,
+            "isExportCompliant": true,
+            "containsAds": false,
+            "locales": {
+                "en-IN": {
+                    "privacyPolicyUrl": "https://kitzz.app/privacy",
+                    "termsOfUseUrl": "https://kitzz.app/terms"
+                },
+                "en-US": {
+                    "privacyPolicyUrl": "https://kitzz.app/privacy",
+                    "termsOfUseUrl": "https://kitzz.app/terms"
+                }
+            }
+        },
+        "permissions": [],
+        "accountLinkingInfo": {
+            "accessTokenScheme": "HTTP_BASIC",
+            "accessTokenUrl": "https://YOUR_BACKEND_DOMAIN/oauth/token",
+            "authorizationUrl": "https://YOUR_BACKEND_DOMAIN/oauth/authorize",
+            "clientId": "alexa-kitzz-skill",
+            "clientSecret": "CHANGE_ME_IN_PRODUCTION",
+            "scopes": [],
+            "type": "AUTH_CODE",
+            "domains": []
+        }
+    }
+}

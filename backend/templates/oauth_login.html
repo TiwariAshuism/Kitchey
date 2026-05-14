@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rasoi - Link your Alexa</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4A90D9;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #357ABD;
+        }
+
+        .error {
+            color: #D32F2F;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Link Rasoi to Alexa</h1>
+    {{if .error}}<p class="error">{{.error}}</p>{{end}}
+    <form method="POST" action="/oauth/authorize">
+        <input type="hidden" name="client_id" value="{{.client_id}}">
+        <input type="hidden" name="redirect_uri" value="{{.redirect_uri}}">
+        <input type="hidden" name="state" value="{{.state}}">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <button type="submit">Sign in & Link</button>
+    </form>
+</body>
+
+</html>
